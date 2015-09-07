@@ -60,9 +60,6 @@ GetFilePath(
 	LPCWSTR FileName)
 {
 	wcsncpy_s(filePath, numberOfElements, RootDirectory, wcslen(RootDirectory));
-	if (wcslen(FileName) > 0 && FileName[0] != L'\\') {
-		wcsncat_s(filePath, numberOfElements, L"\\", 1);
-	}
 	wcsncat_s(filePath, numberOfElements, FileName, wcslen(FileName));
 }
 
