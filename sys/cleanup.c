@@ -168,11 +168,6 @@ DokanCompleteCleanup(
 		FsRtlNotifyCleanup(vcb->NotifySync, &vcb->DirNotifyList, ccb);
 	}
 
-	InterlockedDecrement(&fcb->OpenHandleCount);
-	IoRemoveShareAccess(irpSp->FileObject, &fcb->ShareAccess);
-
-	DDbgPrint("    OpenHandleCount:%d ReferenceCount:%d\n", fcb->OpenHandleCount, fcb->ReferenceCount);
-
     DokanCompleteIrpRequest(irp, status, 0);
 
 	DDbgPrint("<== DokanCompleteCleanup\n");

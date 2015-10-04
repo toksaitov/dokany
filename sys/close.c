@@ -118,7 +118,7 @@ Return Value:
 		}
 
 		eventContext->Context = ccb->UserContext;
-		DDbgPrint("   UserContext:%X RefereceCount:%d OpenHandleCount:%d\n", (ULONG)ccb->UserContext, fcb->ReferenceCount, fcb->OpenHandleCount);
+		DDbgPrint("   UserContext:%X\n", (ULONG)ccb->UserContext);
 
 		// copy the file name to be closed
 		eventContext->Operation.Close.FileNameLength = fcb->FileName.Length;

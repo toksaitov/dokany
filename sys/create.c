@@ -149,7 +149,7 @@ DokanGetFCB(
 		ExFreePool(FileName);
 	}
 
-	InterlockedIncrement(&fcb->ReferenceCount);
+	InterlockedIncrement(&fcb->FileCount);
 
 	ExReleaseResourceLite(&Vcb->Resource);
 	KeLeaveCriticalRegion();
@@ -174,9 +174,9 @@ DokanFreeFCB(
 	ExAcquireResourceExclusiveLite(&vcb->Resource, TRUE);
 	ExAcquireResourceExclusiveLite(&Fcb->Resource, TRUE);
 
-	InterlockedDecrement(&Fcb->ReferenceCount);
+	InterlockedDecrement(&Fcb->FileCount);
 
-	if (Fcb->ReferenceCount == 0) {
+	if (Fcb->FileCount == 0) {
 
 		RemoveEntryList(&Fcb->NextFCB);
 
@@ -506,40 +506,20 @@ Return Value:
 			fcb->AdvancedFCBHeader.Flags2 &= ~FSRTL_FLAG2_SUPPORTS_FILTER_CONTEXTS;
 		}
 
+		ccb = DokanAllocateCCB(dcb, fcb);
+		if (ccb == NULL) {
+            DDbgPrint("    Was not able to allocate CCB\n");
+			DokanFreeFCB(fcb); // FileName is freed here
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			__leave;
+		}
+
 		//remember FILE_DELETE_ON_CLOSE so than the file can be deleted in close for windows 8
 		if (irpSp->Parameters.Create.Options & FILE_DELETE_ON_CLOSE) {
 			fcb->Flags |= DOKAN_DELETE_ON_CLOSE;
 			DDbgPrint("  FILE_DELETE_ON_CLOSE is set so remember for delete in cleanup\n");
 		} else {
 			fcb->Flags &= ~DOKAN_DELETE_ON_CLOSE;
-		}
-
-		if (fcb->OpenHandleCount > 0) {
-				/* check the share access conflicts */
-				status = IoCheckShareAccess(irpSp->Parameters.Create.SecurityContext->DesiredAccess,
-				irpSp->Parameters.Create.ShareAccess,
-				irpSp->FileObject,
-				&(fcb->ShareAccess),
-				TRUE);
-			if (!NT_SUCCESS(status)) {
-				DokanFreeFCB(fcb);
-				__leave;
-			}		
-		}
-		else {
-			/* set share access rights */
-			IoSetShareAccess(irpSp->Parameters.Create.SecurityContext->DesiredAccess,
-				irpSp->Parameters.Create.ShareAccess,
-				irpSp->FileObject,
-				&(fcb->ShareAccess));
-		}
-		
-		ccb = DokanAllocateCCB(dcb, fcb);
-		if (ccb == NULL) {
-			DDbgPrint("    Was not able to allocate CCB");
-			DokanFreeFCB(fcb); // FileName is freed here
-			status = STATUS_INSUFFICIENT_RESOURCES;
-			__leave;
 		}
 
 		fileObject->FsContext = &fcb->AdvancedFCBHeader;
@@ -553,18 +533,9 @@ Return Value:
 				
 		if (eventContext == NULL) {
             DDbgPrint("    Was not able to allocate eventContext\n");
-			IoRemoveShareAccess(irpSp->FileObject, &fcb->ShareAccess);
-			fileObject->FsContext = NULL;
-			fileObject->FsContext2 = NULL;
-			fileObject->PrivateCacheMap = NULL;
-			fileObject->SectionObjectPointer = NULL;
-			DokanFreeFCB(fcb);
-			DokanFreeCCB(ccb);
 			status = STATUS_INSUFFICIENT_RESOURCES;
 			__leave;
 		}
-
-		InterlockedIncrement(&fcb->OpenHandleCount);
 
 		eventContext->Context = 0;
 		eventContext->FileFlags |= fcb->Flags;
@@ -681,9 +652,7 @@ DokanCompleteCreate(
 			}
 		}
 	} else {
-		DDbgPrint("   IRP_MJ_CREATE failed. Free CCB:%X\n", ccb);
-		InterlockedDecrement(&fcb->OpenHandleCount);
-		IoRemoveShareAccess(irpSp->FileObject, &fcb->ShareAccess);
+		DDbgPrint("   IRP_MJ_CREATE failed. Free CCB:%p\n", ccb);
 		DokanFreeCCB(ccb);
 		DokanFreeFCB(fcb);
 	}

@@ -236,12 +236,6 @@ typedef struct _DokanVolumeControlBlock {
 } DokanVCB, *PDokanVCB;
 
 
-//
-// File Control Block
-//
-// Data that represents an open file
-// There is a single instance of the FCB for every open file
-//
 typedef struct _DokanFileControlBlock
 {
 	FSD_IDENTIFIER				Identifier;
@@ -259,27 +253,18 @@ typedef struct _DokanFileControlBlock
 	ERESOURCE				Resource;
 	LIST_ENTRY				NextCCB;
 
+	LONG					FileCount;
+
 	ULONG					Flags;
 
 	UNICODE_STRING			FileName;
 
-	// Share Access for the file object
-	SHARE_ACCESS            ShareAccess;
-
-	// Incremented on IRP_MJ_CREATE, decremented on IRP_MJ_CLEANUP
-	LONG                  OpenHandleCount;
-
-	// Incremented on IRP_MJ_CREATE, decremented on IRP_MJ_CLOSE
-	LONG                  ReferenceCount;
+	//uint32 ReferenceCount;
+	//uint32 OpenHandleCount;
 } DokanFCB, *PDokanFCB;
 
 
-//
-// Context Control Block
-//
-// Data that represents one instance of an open file
-// There is one instance of the CCB for every instance of an open file
-//
+
 typedef struct _DokanContextControlBlock
 {
 	FSD_IDENTIFIER		Identifier;
@@ -293,6 +278,8 @@ typedef struct _DokanContextControlBlock
 	ULONG				SearchPatternLength;
 
 	ULONG				Flags;
+
+	int					FileCount;
 	ULONG				MountId;
 } DokanCCB, *PDokanCCB;
 
