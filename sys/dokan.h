@@ -48,7 +48,7 @@ extern ULONG g_Debug;
 #define DOKAN_GLOBAL_FS_NETWORK_DEVICE_NAME L"\\Device\\DokanRedirector"
 
 #define DOKAN_DISK_DEVICE_NAME		L"\\Device\\Volume"
-#define DOKAN_SYMBOLIC_LINK_NAME    L"\\DosDevices\\Global\\Volume"
+#define DOKAN_SYMBOLIC_LINK_BASE    L"\\DosDevices\\Global"
 
 #define DOKAN_NET_DEVICE_NAME			L"\\Device\\NetworkVolume"
 #define DOKAN_NET_SYMBOLIC_LINK_NAME    L"\\DosDevices\\Global\\NetworkVolume"
@@ -742,6 +742,10 @@ DokanAllocateMdl(
 VOID
 DokanFreeMdl(
 	__in PIRP	Irp);
+
+PUNICODE_STRING
+DokanAllocateUnicodeString(
+	__in PCWSTR String);
 
 
 #endif // _DOKAN_H_

@@ -367,6 +367,12 @@ Return Value:
 		DDbgPrint("  FileName:%wZ\n", &fileObject->FileName);
 
 		vcb = DeviceObject->DeviceExtension;
+		if (vcb == NULL) {
+			DDbgPrint("  No device extension\n");
+			status = STATUS_SUCCESS;
+			__leave;
+		}
+
 		PrintIdType(vcb);
 		if (GetIdentifierType(vcb) != VCB) {
             DDbgPrint("  IdentifierType is not vcb\n");

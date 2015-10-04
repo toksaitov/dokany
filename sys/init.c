@@ -127,10 +127,10 @@ DokanSendVolumeArrivalNotification(
 	if (NT_SUCCESS(status)) {
 		DDbgPrint("  IoCallDriver success\n");
 	} else {
-		DDbgPrint("  IoCallDriver faield: 0x%x\n", status);
+		DDbgPrint("  IoCallDriver failed: 0x%x\n", status);
 	}
 
-	ExFreePool(targetName);
+	ExFreePool(targetName);	
 
 	DDbgPrint("<= DokanSendVolumeArrivalNotification\n");
 
@@ -336,7 +336,7 @@ DokanCreateGlobalDiskDevice(
 		IoDeleteDevice(deviceObject);
 		return status;
 	}
-	DDbgPrint("DokanDiskFileSystemDevice: %wZ created\n", fsDiskDeviceName);
+	DDbgPrint("DokanDiskFileSystemDevice: %wZ created\n", &fsDiskDeviceName);
 
 	status = IoCreateDeviceSecure(
 		DriverObject,					// DriverObject
@@ -355,7 +355,7 @@ DokanCreateGlobalDiskDevice(
 		IoDeleteDevice(deviceObject);
 		return status;
 	}
-	DDbgPrint("DokanCdFileSystemDevice: %wZ created\n", fsCdDeviceName);
+	DDbgPrint("DokanCdFileSystemDevice: %wZ created\n", &fsCdDeviceName);
 
 	status = IoCreateDeviceSecure(
 		DriverObject,					// DriverObject
@@ -375,7 +375,7 @@ DokanCreateGlobalDiskDevice(
 		IoDeleteDevice(deviceObject);
 		return status;
 	}
-	DDbgPrint("DokanNetworkFileSystemDevice: %wZ created\n", fsNetworkDeviceName);
+	DDbgPrint("DokanNetworkFileSystemDevice: %wZ created\n", &fsNetworkDeviceName);
 
 	ObReferenceObject(deviceObject);
 
@@ -438,7 +438,7 @@ DokanCreateGlobalDiskDevice(
 
 
 PUNICODE_STRING
-AllocateUnicodeString(
+DokanAllocateUnicodeString(
 	__in PCWSTR String)
 {
 	PUNICODE_STRING	unicode;
@@ -486,7 +486,6 @@ DokanCreateDiskDevice(
 	)
 {
 	WCHAR				diskDeviceNameBuf[MAXIMUM_FILENAME_LENGTH];
-	WCHAR				symbolicLinkNameBuf[MAXIMUM_FILENAME_LENGTH];
 	PDEVICE_OBJECT		diskDeviceObject;
 	PDEVICE_OBJECT		volDeviceObject;
 	PDokanDCB			dcb;
@@ -495,23 +494,14 @@ DokanCreateDiskDevice(
 	NTSTATUS			status;
 	BOOLEAN				isNetworkFileSystem = (DeviceType == FILE_DEVICE_NETWORK_FILE_SYSTEM);
 
-	// make DeviceName and SymboliLink
+	// make DeviceName
 	if (isNetworkFileSystem) {
-#ifdef DOKAN_NET_PROVIDER
-		RtlStringCchCopyW(diskDeviceNameBuf, MAXIMUM_FILENAME_LENGTH, DOKAN_NET_DEVICE_NAME);
-		RtlStringCchCopyW(symbolicLinkNameBuf, MAXIMUM_FILENAME_LENGTH, DOKAN_NET_SYMBOLIC_LINK_NAME);
-#else
 		RtlStringCchCopyW(diskDeviceNameBuf, MAXIMUM_FILENAME_LENGTH, DOKAN_NET_DEVICE_NAME);
 		RtlStringCchCatW(diskDeviceNameBuf, MAXIMUM_FILENAME_LENGTH, BaseGuid);
-		RtlStringCchCopyW(symbolicLinkNameBuf, MAXIMUM_FILENAME_LENGTH, DOKAN_NET_SYMBOLIC_LINK_NAME);
-		RtlStringCchCatW(symbolicLinkNameBuf, MAXIMUM_FILENAME_LENGTH, BaseGuid);
-#endif
 
 	} else {
 		RtlStringCchCopyW(diskDeviceNameBuf, MAXIMUM_FILENAME_LENGTH, DOKAN_DISK_DEVICE_NAME);
 		RtlStringCchCatW(diskDeviceNameBuf, MAXIMUM_FILENAME_LENGTH, BaseGuid);
-		RtlStringCchCopyW(symbolicLinkNameBuf, MAXIMUM_FILENAME_LENGTH, DOKAN_SYMBOLIC_LINK_NAME);
-		RtlStringCchCatW(symbolicLinkNameBuf, MAXIMUM_FILENAME_LENGTH, BaseGuid);
 	}
 	
 	RtlInitUnicodeString(&diskDeviceName, diskDeviceNameBuf);
@@ -586,19 +576,10 @@ DokanCreateDiskDevice(
 	dcb->CacheManagerNoOpCallbacks.AcquireForReadAhead  = &DokanNoOpAcquire;
 	dcb->CacheManagerNoOpCallbacks.ReleaseFromReadAhead = &DokanNoOpRelease;
 
-	dcb->SymbolicLinkName = AllocateUnicodeString(symbolicLinkNameBuf);
-	dcb->DiskDeviceName =  AllocateUnicodeString(diskDeviceNameBuf);
-
-	if (dcb->SymbolicLinkName == NULL) {
-		DDbgPrint("  Can't allocate memory for SymbolicLinkName");
-		ExDeleteResourceLite(&dcb->Resource);
-		IoDeleteDevice(diskDeviceObject);
-		return STATUS_INSUFFICIENT_RESOURCES;
-	}
+	dcb->DiskDeviceName = DokanAllocateUnicodeString(diskDeviceNameBuf);
 
 	if (dcb->DiskDeviceName == NULL) {
 		DDbgPrint("  Can't allocate memory for DiskDeviceName");
-		ExFreePool(dcb->SymbolicLinkName);
 		ExDeleteResourceLite(&dcb->Resource);
 		IoDeleteDevice(diskDeviceObject);
 		return STATUS_INSUFFICIENT_RESOURCES;
@@ -655,19 +636,6 @@ DokanCreateDiskDevice(
 
 	DokanInitVpb(diskDeviceObject->Vpb, diskDeviceObject, volDeviceObject);
 
-	//
-	// Create a symbolic link for userapp to interact with the driver.
-	//
-	status = IoCreateSymbolicLink(dcb->SymbolicLinkName, dcb->DiskDeviceName);
-
-	if (!NT_SUCCESS(status)) {
-		IoDeleteDevice(diskDeviceObject);
-		IoDeleteDevice(volDeviceObject);
-		DDbgPrint("  IoCreateSymbolicLink returned 0x%x\n", status);
-		return status;
-	}
-	DDbgPrint("SymbolicLink: %wZ -> %wZ created\n", dcb->SymbolicLinkName, dcb->DiskDeviceName);
-
 	// Mark devices as initialized
 	diskDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
 	volDeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
@@ -680,7 +648,13 @@ DokanCreateDiskDevice(
 	dcb->Mounted = 1;
 
 	//DokanRegisterDeviceInterface(DriverObject, diskDeviceObject, dcb);
-	DokanSendVolumeArrivalNotification(dcb->DiskDeviceName);
+	status = DokanSendVolumeArrivalNotification(dcb->DiskDeviceName);
+	if (!NT_SUCCESS(status)) {
+		DDbgPrint("  DokanSendVolumeArrivalNotification failed: 0x%x\n", status);
+		ExDeleteResourceLite(&dcb->Resource);
+		IoDeleteDevice(diskDeviceObject);
+		return status;
+	}
 
 	return STATUS_SUCCESS;
 }
@@ -699,9 +673,6 @@ DokanDeleteDeviceObject(
         DDbgPrint("  Symbolic Name already deleted, so go out here\n");
         return;
     }
-
-	DDbgPrint("  Delete Symbolic Name: %wZ\n", Dcb->SymbolicLinkName);
-	IoDeleteSymbolicLink(Dcb->SymbolicLinkName);
 
 	if (Dcb->MountedDeviceInterfaceName.Buffer != NULL) {
 		IoSetDeviceInterfaceState(&Dcb->MountedDeviceInterfaceName, FALSE);

@@ -195,12 +195,12 @@ BOOL CheckDriveLetterAvailability(
 BOOL
 CreateDriveLetter(
 	WCHAR		DriveLetter,
-	LPCWSTR	DeviceName)
+	LPCWSTR		DeviceName)
 {
 	WCHAR   dosDevice[] = L"\\\\.\\C:";
 	WCHAR   driveName[] = L"C:\\";
 	WCHAR	rawVolumeName[MAX_PATH] = L"\\?\\Volume{x}";
-	WCHAR	rawDeviceName[MAX_PATH] = L"\\Device";
+	WCHAR	rawDeviceName[MAX_PATH] = L"\\??";
 	HANDLE  device;
 
 	dosDevice[4] = DriveLetter;
@@ -242,7 +242,7 @@ CreateDriveLetter(
 	if (!GetVolumeNameForVolumeMountPoint(driveName, rawVolumeName, MAX_PATH)) {
 		DbgPrint("Error: GetVolumeNameForVolumeMountPoint failed : %d\n", GetLastError());
 	} else {
-		DbgPrint("UniqueVolumeName %ws\n", rawDeviceName);
+		DbgPrint("UniqueVolumeName %ws\n", rawVolumeName);
 		DefineDosDevice(DDD_REMOVE_DEFINITION, &dosDevice[4], NULL);
 
 		if (!SetVolumeMountPoint(driveName, rawVolumeName)) {

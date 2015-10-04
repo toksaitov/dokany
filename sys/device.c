@@ -398,11 +398,11 @@ DiskDeviceControl(
 			uniqueId = (PMOUNTDEV_UNIQUE_ID)Irp->AssociatedIrp.SystemBuffer;
 			ASSERT(uniqueId != NULL);
 
-			uniqueId->UniqueIdLength = dcb->SymbolicLinkName->Length;
+			uniqueId->UniqueIdLength = dcb->DiskDeviceName->Length;
 
 			if (sizeof(USHORT) + uniqueId->UniqueIdLength < outputLength) {
 				RtlCopyMemory((PCHAR)uniqueId->UniqueId,  
-								dcb->SymbolicLinkName->Buffer,
+								dcb->DiskDeviceName->Buffer,
 								uniqueId->UniqueIdLength);
 				Irp->IoStatus.Information = FIELD_OFFSET(MOUNTDEV_UNIQUE_ID, UniqueId[0]) +
 											uniqueId->UniqueIdLength;
@@ -420,9 +420,23 @@ DiskDeviceControl(
 		break;
 	case IOCTL_MOUNTDEV_LINK_CREATED:
 		{
-			//PMOUNTDEV_NAME	mountdevName = Irp->AssociatedIrp.SystemBuffer;
+			PMOUNTDEV_NAME	mountdevName = Irp->AssociatedIrp.SystemBuffer;
 			DDbgPrint("   IOCTL_MOUNTDEV_LINK_CREATED\n");
+
 			status = STATUS_SUCCESS;
+			if (mountdevName != NULL && mountdevName->NameLength > 0) {
+				// Link path should be \\??\Volume{x}
+				WCHAR	symbolicLinkNameBuf[MAXIMUM_FILENAME_LENGTH];
+				RtlZeroMemory(symbolicLinkNameBuf, sizeof(symbolicLinkNameBuf));
+				RtlCopyMemory(symbolicLinkNameBuf, mountdevName->Name, mountdevName->NameLength);
+				DDbgPrint("   SymbolicLinkName: %ws\n", symbolicLinkNameBuf)
+
+				dcb->SymbolicLinkName = DokanAllocateUnicodeString(symbolicLinkNameBuf);
+				if (dcb->SymbolicLinkName == NULL) {
+					DDbgPrint("  Can't allocate memory for SymbolicLinkName");
+					status = STATUS_INSUFFICIENT_RESOURCES;
+				}
+			}
 		}
 		break;
 	case IOCTL_MOUNTDEV_LINK_DELETED:
