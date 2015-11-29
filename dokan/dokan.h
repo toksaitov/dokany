@@ -296,6 +296,8 @@ typedef struct _DOKAN_OPERATIONS {
 int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
                        PDOKAN_OPERATIONS DokanOperations);
 
+BOOL DOKANAPI DokanMount(LPCWSTR MountPoint, LPCWSTR DeviceName);
+
 BOOL DOKANAPI DokanUnmount(WCHAR DriveLetter);
 
 BOOL DOKANAPI DokanRemoveMountPoint(LPCWSTR MountPoint);

@@ -78,8 +78,6 @@ void ALIGN_ALLOCATION_SIZE(PLARGE_INTEGER size);
 
 UINT __stdcall DokanLoop(PVOID Param);
 
-BOOL DokanMount(LPCWSTR MountPoint, LPCWSTR DeviceName);
-
 VOID SendEventInformation(HANDLE Handle, PEVENT_INFORMATION EventInfo,
                           ULONG EventLength, PDOKAN_INSTANCE DokanInstance);
 
