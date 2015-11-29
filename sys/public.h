@@ -18,15 +18,12 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #ifndef _PUBLIC_H_
 #define _PUBLIC_H_
 
-#include "devioctl.h"
-
 #define DOKAN_DRIVER_VERSION	0x0000190
 
-#define EVENT_CONTEXT_MAX_SIZE		(1024*32)
+#define EVENT_CONTEXT_MAX_SIZE (1024 * 32)
 
 #define IOCTL_TEST \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
@@ -61,7 +58,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 #define IOCTL_GET_ACCESS_TOKEN \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x80C, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
-
 #define DRIVER_FUNC_INSTALL     0x01
 #define DRIVER_FUNC_REMOVE      0x02
 
@@ -86,22 +82,89 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 #define DOKAN_WRITE_TO_END_OF_FILE 128
 #define DOKAN_NOCACHE			256
 
-
 // used in DOKAN_START->DeviceType
 #define DOKAN_DISK_FILE_SYSTEM		0
 #define DOKAN_NETWORK_FILE_SYSTEM	1
 
+/*
+ * This structure is used for copying UNICODE_STRING from the kernel mode driver
+ * into the user mode driver.
+ * https://msdn.microsoft.com/en-us/library/windows/hardware/ff564879(v=vs.85).aspx
+ */
+typedef struct _DOKAN_UNICODE_STRING_INTERMEDIATE {
+  USHORT Length;
+  USHORT MaximumLength;
+  WCHAR Buffer[1];
+} DOKAN_UNICODE_STRING_INTERMEDIATE, *PDOKAN_UNICODE_STRING_INTERMEDIATE;
+
+/*
+ * This structure is used for copying ACCESS_STATE from the kernel mode driver
+ * into the user mode driver.
+ * https://msdn.microsoft.com/en-us/library/windows/hardware/ff538840(v=vs.85).aspx
+*/
+typedef struct _DOKAN_ACCESS_STATE_INTERMEDIATE {
+  BOOLEAN SecurityEvaluated;
+  BOOLEAN GenerateAudit;
+  BOOLEAN GenerateOnClose;
+  BOOLEAN AuditPrivileges;
+  ULONG Flags;
+  ACCESS_MASK RemainingDesiredAccess;
+  ACCESS_MASK PreviouslyGrantedAccess;
+  ACCESS_MASK OriginalDesiredAccess;
+
+  // Offset from the beginning of this structure to a SECURITY_DESCRIPTOR
+  // if 0 that means there is no security descriptor
+  ULONG SecurityDescriptorOffset;
+
+  // Offset from the beginning of this structure to a
+  // DOKAN_UNICODE_STRING_INTERMEDIATE
+  ULONG UnicodeStringObjectNameOffset;
+
+  // Offset from the beginning of this structure to a
+  // DOKAN_UNICODE_STRING_INTERMEDIATE
+  ULONG UnicodeStringObjectTypeOffset;
+} DOKAN_ACCESS_STATE_INTERMEDIATE, *PDOKAN_ACCESS_STATE_INTERMEDIATE;
+
+typedef struct _DOKAN_ACCESS_STATE {
+  BOOLEAN SecurityEvaluated;
+  BOOLEAN GenerateAudit;
+  BOOLEAN GenerateOnClose;
+  BOOLEAN AuditPrivileges;
+  ULONG Flags;
+  ACCESS_MASK RemainingDesiredAccess;
+  ACCESS_MASK PreviouslyGrantedAccess;
+  ACCESS_MASK OriginalDesiredAccess;
+  PSECURITY_DESCRIPTOR SecurityDescriptor;
+  UNICODE_STRING ObjectName;
+  UNICODE_STRING ObjectType;
+} DOKAN_ACCESS_STATE, *PDOKAN_ACCESS_STATE;
+
+/*
+ * This structure is used for copying IO_SECURITY_CONTEXT from the kernel mode
+ * driver into the user mode driver.
+ * https://msdn.microsoft.com/en-us/library/windows/hardware/ff550613(v=vs.85).aspx
+ */
+typedef struct _DOKAN_IO_SECURITY_CONTEXT_INTERMEDIATE {
+  DOKAN_ACCESS_STATE_INTERMEDIATE AccessState;
+  ACCESS_MASK DesiredAccess;
+} DOKAN_IO_SECURITY_CONTEXT_INTERMEDIATE,
+    *PDOKAN_IO_SECURITY_CONTEXT_INTERMEDIATE;
+
+typedef struct _DOKAN_IO_SECURITY_CONTEXT {
+  DOKAN_ACCESS_STATE AccessState;
+  ACCESS_MASK DesiredAccess;
+} DOKAN_IO_SECURITY_CONTEXT, *PDOKAN_IO_SECURITY_CONTEXT;
+
 typedef struct _CREATE_CONTEXT {
+  DOKAN_IO_SECURITY_CONTEXT_INTERMEDIATE SecurityContext;
 	ULONG	FileAttributes;
 	ULONG	CreateOptions;
-	ULONG	DesiredAccess;
 	ULONG	ShareAccess;
-	
 	ULONG	FileNameLength;
-	WCHAR	FileName[1];
 
+  // Offset from the beginning of this structure to the string
+  ULONG FileNameOffset;
 } CREATE_CONTEXT, *PCREATE_CONTEXT;
-
 
 typedef struct _CLEANUP_CONTEXT {
 	ULONG	FileNameLength;
@@ -109,13 +172,11 @@ typedef struct _CLEANUP_CONTEXT {
 
 } CLEANUP_CONTEXT, *PCLEANUP_CONTEXT;
 
-
 typedef struct _CLOSE_CONTEXT {
 	ULONG	FileNameLength;
 	WCHAR	FileName[1];
 
 } CLOSE_CONTEXT, *PCLOSE_CONTEXT;
-
 
 typedef struct _DIRECTORY_CONTEXT {
 	ULONG	FileInformationClass;
@@ -129,14 +190,12 @@ typedef struct _DIRECTORY_CONTEXT {
 
 } DIRECTORY_CONTEXT, *PDIRECTORY_CONTEXT;
 
-
 typedef struct _READ_CONTEXT {
 	LARGE_INTEGER	ByteOffset;
 	ULONG			BufferLength;
 	ULONG			FileNameLength;
 	WCHAR			FileName[1];
 } READ_CONTEXT, *PREAD_CONTEXT;
-
 
 typedef struct _WRITE_CONTEXT {
 	LARGE_INTEGER	ByteOffset;
@@ -148,14 +207,12 @@ typedef struct _WRITE_CONTEXT {
 	// "2" means to keep last null of contents to write
 } WRITE_CONTEXT, *PWRITE_CONTEXT;
 
-
 typedef struct _FILEINFO_CONTEXT {
 	ULONG	FileInformationClass;
 	ULONG	BufferLength;
 	ULONG	FileNameLength;
 	WCHAR	FileName[1];
 } FILEINFO_CONTEXT, *PFILEINFO_CONTEXT;
-
 
 typedef struct _SETFILE_CONTEXT {
 	ULONG	FileInformationClass;
@@ -165,12 +222,10 @@ typedef struct _SETFILE_CONTEXT {
 	WCHAR	FileName[1];
 } SETFILE_CONTEXT, *PSETFILE_CONTEXT;
 
-
 typedef struct _VOLUME_CONTEXT {
 	ULONG	FsInformationClass;
 	ULONG	BufferLength;
 } VOLUME_CONTEXT, *PVOLUME_CONTEXT;
-
 
 typedef struct _LOCK_CONTEXT {
 	LARGE_INTEGER	ByteOffset;
@@ -180,18 +235,15 @@ typedef struct _LOCK_CONTEXT {
 	WCHAR			FileName[1];
 } LOCK_CONTEXT, *PLOCK_CONTEXT;
 
-
 typedef struct _FLUSH_CONTEXT {
 	ULONG	FileNameLength;
 	WCHAR	FileName[1];
 } FLUSH_CONTEXT, *PFLUSH_CONTEXT;
 
-
 typedef struct _UNMOUNT_CONTEXT {
 	WCHAR	DeviceName[64];
 	ULONG	Option;
 } UNMOUNT_CONTEXT, *PUNMOUNT_CONTEXT;
-
 
 typedef struct _SECURITY_CONTEXT {
 	SECURITY_INFORMATION	SecurityInformation;
@@ -200,7 +252,6 @@ typedef struct _SECURITY_CONTEXT {
 	WCHAR	FileName[1];
 } SECURITY_CONTEXT, *PSECURITY_CONTEXT;
 
-
 typedef struct _SET_SECURITY_CONTEXT {
 	SECURITY_INFORMATION	SecurityInformation;
 	ULONG	BufferLength;
@@ -208,7 +259,6 @@ typedef struct _SET_SECURITY_CONTEXT {
 	ULONG	FileNameLength;
 	WCHAR	FileName[1];
 } SET_SECURITY_CONTEXT, *PSET_SECURITY_CONTEXT;
-
 
 typedef struct _EVENT_CONTEXT {
 	ULONG	Length;
@@ -238,9 +288,8 @@ typedef struct _EVENT_CONTEXT {
 	} Operation;
 } EVENT_CONTEXT, *PEVENT_CONTEXT;
 
-
-#define WRITE_MAX_SIZE				(EVENT_CONTEXT_MAX_SIZE-sizeof(EVENT_CONTEXT)-256*sizeof(WCHAR))
-
+#define WRITE_MAX_SIZE                                                         \
+  (EVENT_CONTEXT_MAX_SIZE - sizeof(EVENT_CONTEXT) - 256 * sizeof(WCHAR))
 
 typedef struct _EVENT_INFORMATION {
 	ULONG		SerialNumber;
@@ -276,8 +325,8 @@ typedef struct _EVENT_INFORMATION {
 
 } EVENT_INFORMATION, *PEVENT_INFORMATION;
 
-
 #define DOKAN_EVENT_ALTERNATIVE_STREAM_ON	1
+#define DOKAN_EVENT_WRITE_PROTECT 2
 #define DOKAN_EVENT_REMOVABLE				4
 
 typedef struct _EVENT_DRIVER_INFO {
@@ -309,4 +358,3 @@ typedef struct _DOKAN_LINK_INFORMATION {
 } DOKAN_LINK_INFORMATION, *PDOKAN_LINK_INFORMATION;
 
 #endif // _PUBLIC_H_
-

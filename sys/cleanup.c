@@ -18,15 +18,10 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "dokan.h"
 
-
 NTSTATUS
-DokanDispatchCleanup(
-	__in PDEVICE_OBJECT DeviceObject,
-	__in PIRP Irp
-	)
+DokanDispatchCleanup(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp)
 
 /*++
 
@@ -57,7 +52,7 @@ Return Value:
 	__try {
 
 		DDbgPrint("==> DokanCleanup\n");
-	
+
 		irpSp = IoGetCurrentIrpStackLocation(Irp);
 		fileObject = irpSp->FileObject;
 
@@ -108,11 +103,12 @@ Return Value:
 
 		eventContext->Context = ccb->UserContext;
 		eventContext->FileFlags |= fcb->Flags;
-		//DDbgPrint("   get Context %X\n", (ULONG)ccb->UserContext);
+    // DDbgPrint("   get Context %X\n", (ULONG)ccb->UserContext);
 
 		// copy the filename to EventContext from ccb
 		eventContext->Operation.Cleanup.FileNameLength = fcb->FileName.Length;
-		RtlCopyMemory(eventContext->Operation.Cleanup.FileName, fcb->FileName.Buffer, fcb->FileName.Length);
+        RtlCopyMemory(eventContext->Operation.Cleanup.FileName,
+        fcb->FileName.Buffer, fcb->FileName.Length);
 
 		// register this IRP to pending IRP list
 		status = DokanRegisterPendingIrp(DeviceObject, Irp, eventContext, 0);
@@ -127,14 +123,8 @@ Return Value:
 	return status;
 }
 
-
-
-VOID
-DokanCompleteCleanup(
-	 __in PIRP_ENTRY			IrpEntry,
-	 __in PEVENT_INFORMATION	EventInfo
-	 )
-{
+VOID DokanCompleteCleanup(__in PIRP_ENTRY IrpEntry,
+                          __in PEVENT_INFORMATION EventInfo) {
 	PIRP				irp;
 	PIO_STACK_LOCATION	irpSp;
 	NTSTATUS			status   = STATUS_SUCCESS;
@@ -155,7 +145,7 @@ DokanCompleteCleanup(
 	ASSERT(ccb != NULL);
 
 	ccb->UserContext = EventInfo->Context;
-	//DDbgPrint("   set Context %X\n", (ULONG)ccb->UserContext);
+  // DDbgPrint("   set Context %X\n", (ULONG)ccb->UserContext);
 
 	fcb = ccb->Fcb;
 	ASSERT(fcb != NULL);
@@ -172,5 +162,3 @@ DokanCompleteCleanup(
 
 	DDbgPrint("<== DokanCompleteCleanup\n");
 }
-
-

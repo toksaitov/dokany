@@ -18,16 +18,10 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "dokan.h"
 
-
 NTSTATUS
-DokanUserFsRequest(
-	__in PDEVICE_OBJECT	DeviceObject,
-	__in PIRP			Irp
-	)
-{
+DokanUserFsRequest(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 	NTSTATUS			status = STATUS_NOT_IMPLEMENTED;
 	PIO_STACK_LOCATION	irpSp;
 
@@ -35,7 +29,7 @@ DokanUserFsRequest(
 
 	irpSp = IoGetCurrentIrpStackLocation(Irp);
 
-	switch(irpSp->Parameters.FileSystemControl.FsControlCode) {
+  switch (irpSp->Parameters.FileSystemControl.FsControlCode) {
 
 	case FSCTL_REQUEST_OPLOCK_LEVEL_1:
 		DDbgPrint("    FSCTL_REQUEST_OPLOCK_LEVEL_1\n");
@@ -301,11 +295,8 @@ DokanInitVpb(
 
 
 NTSTATUS
-DokanDispatchFileSystemControl(
-	__in PDEVICE_OBJECT DeviceObject,
-	__in PIRP Irp
-	)
-{
+DokanDispatchFileSystemControl(__in PDEVICE_OBJECT DeviceObject,
+                               __in PIRP Irp) {
 	NTSTATUS			status = STATUS_INVALID_PARAMETER;
 	PIO_STACK_LOCATION	irpSp;
 
@@ -315,7 +306,7 @@ DokanDispatchFileSystemControl(
 
 		irpSp = IoGetCurrentIrpStackLocation(Irp);
 
-		switch(irpSp->MinorFunction) {
+    switch (irpSp->MinorFunction) {
 		case IRP_MN_KERNEL_CALL:
 			DDbgPrint("	 IRP_MN_KERNEL_CALL\n");
 			break;
@@ -324,8 +315,7 @@ DokanDispatchFileSystemControl(
 			DDbgPrint("	 IRP_MN_LOAD_FILE_SYSTEM\n");
 			break;
 
-		case IRP_MN_MOUNT_VOLUME:
-			{
+    case IRP_MN_MOUNT_VOLUME: {
 				PDokanDCB	dcb = NULL;
 				PDokanVCB	vcb = NULL;
 				PVPB		vpb = NULL;
@@ -351,8 +341,7 @@ DokanDispatchFileSystemControl(
 
 				// FsRtlNotifyVolumeEvent(, FSRTL_VOLUME_MOUNT);
 				status = STATUS_SUCCESS;
-			}
-			break;
+    } break;
 
 		case IRP_MN_USER_FS_REQUEST:
 			DDbgPrint("	 IRP_MN_USER_FS_REQUEST\n");
@@ -367,11 +356,10 @@ DokanDispatchFileSystemControl(
 			DDbgPrint("  unknown %d\n", irpSp->MinorFunction);
 			status = STATUS_INVALID_PARAMETER;
 			break;
-
 		}
 
 	} __finally {
-		
+
         DokanCompleteIrpRequest(Irp, status, 0);
 
 		DDbgPrint("<== DokanFileSystemControl\n");
@@ -379,4 +367,3 @@ DokanDispatchFileSystemControl(
 
 	return status;
 }
-

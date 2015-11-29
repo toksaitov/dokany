@@ -21,7 +21,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef _FILEINFO_H_
 #define _FILEINFO_H_
 
-
 #define IRP_MJ_CREATE                   0x00
 #define IRP_MJ_CREATE_NAMED_PIPE        0x01
 #define IRP_MJ_CLOSE                    0x02
@@ -53,12 +52,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 #define IRP_MJ_PNP_POWER                IRP_MJ_PNP
 #define IRP_MJ_MAXIMUM_FUNCTION         0x1b
 
-
 #define IRP_MN_LOCK                     0x01
 #define IRP_MN_UNLOCK_SINGLE            0x02
 #define IRP_MN_UNLOCK_ALL               0x03
 #define IRP_MN_UNLOCK_ALL_BY_KEY        0x04
-
 
 typedef enum _FILE_INFORMATION_CLASS {
     FileDirectoryInformation         = 1,
@@ -134,8 +131,8 @@ typedef enum _FILE_INFORMATION_CLASS {
 	FileIdExtdBothDirectoryInformation,      // 63
 
     FileMaximumInformation
-} FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
-
+} FILE_INFORMATION_CLASS,
+    *PFILE_INFORMATION_CLASS;
 
 typedef enum _FSINFOCLASS {
     FileFsVolumeInformation       = 1,
@@ -147,42 +144,36 @@ typedef enum _FSINFOCLASS {
     FileFsFullSizeInformation,   // 7
     FileFsObjectIdInformation,   // 8
     FileFsDriverPathInformation, // 9
-    FileFsVolumeFlagsInformation,// 10
+  FileFsVolumeFlagsInformation, // 10
     FileFsMaximumInformation
-} FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
-
+} FS_INFORMATION_CLASS,
+    *PFS_INFORMATION_CLASS;
 
 typedef struct _FILE_ALIGNMENT_INFORMATION {
     ULONG AlignmentRequirement;
 } FILE_ALIGNMENT_INFORMATION, *PFILE_ALIGNMENT_INFORMATION;
-
 
 typedef struct _FILE_NAME_INFORMATION {
     ULONG FileNameLength;
     WCHAR FileName[1];
 } FILE_NAME_INFORMATION, *PFILE_NAME_INFORMATION;
 
-
 typedef struct _FILE_ATTRIBUTE_TAG_INFORMATION {
     ULONG FileAttributes;
     ULONG ReparseTag;
 } FILE_ATTRIBUTE_TAG_INFORMATION, *PFILE_ATTRIBUTE_TAG_INFORMATION;
 
-
 typedef struct _FILE_DISPOSITION_INFORMATION {
     BOOLEAN DeleteFile;
 } FILE_DISPOSITION_INFORMATION, *PFILE_DISPOSITION_INFORMATION;
-
 
 typedef struct _FILE_END_OF_FILE_INFORMATION {
     LARGE_INTEGER EndOfFile;
 } FILE_END_OF_FILE_INFORMATION, *PFILE_END_OF_FILE_INFORMATION;
 
-
 typedef struct _FILE_VALID_DATA_LENGTH_INFORMATION {
     LARGE_INTEGER ValidDataLength;
 } FILE_VALID_DATA_LENGTH_INFORMATION, *PFILE_VALID_DATA_LENGTH_INFORMATION;
-
 
 typedef struct _FILE_BASIC_INFORMATION {
     LARGE_INTEGER CreationTime;
@@ -192,7 +183,6 @@ typedef struct _FILE_BASIC_INFORMATION {
     ULONG FileAttributes;
 } FILE_BASIC_INFORMATION, *PFILE_BASIC_INFORMATION;
 
-
 typedef struct _FILE_STANDARD_INFORMATION {
     LARGE_INTEGER AllocationSize;
     LARGE_INTEGER EndOfFile;
@@ -201,11 +191,9 @@ typedef struct _FILE_STANDARD_INFORMATION {
     BOOLEAN Directory;
 } FILE_STANDARD_INFORMATION, *PFILE_STANDARD_INFORMATION;
 
-
 typedef struct _FILE_POSITION_INFORMATION {
     LARGE_INTEGER CurrentByteOffset;
 } FILE_POSITION_INFORMATION, *PFILE_POSITION_INFORMATION;
-
 
 typedef struct _FILE_DIRECTORY_INFORMATION {
     ULONG NextEntryOffset;
@@ -221,7 +209,6 @@ typedef struct _FILE_DIRECTORY_INFORMATION {
     WCHAR FileName[1];
 } FILE_DIRECTORY_INFORMATION, *PFILE_DIRECTORY_INFORMATION;
 
-
 typedef struct _FILE_FULL_DIR_INFORMATION {
     ULONG NextEntryOffset;
     ULONG FileIndex;
@@ -236,7 +223,6 @@ typedef struct _FILE_FULL_DIR_INFORMATION {
     ULONG EaSize;
     WCHAR FileName[1];
 } FILE_FULL_DIR_INFORMATION, *PFILE_FULL_DIR_INFORMATION;
-
 
 typedef struct _FILE_ID_FULL_DIR_INFORMATION {
     ULONG NextEntryOffset;
@@ -254,7 +240,6 @@ typedef struct _FILE_ID_FULL_DIR_INFORMATION {
     WCHAR FileName[1];
 } FILE_ID_FULL_DIR_INFORMATION, *PFILE_ID_FULL_DIR_INFORMATION;
 
-
 typedef struct _FILE_BOTH_DIR_INFORMATION {
     ULONG NextEntryOffset;
     ULONG FileIndex;
@@ -271,7 +256,6 @@ typedef struct _FILE_BOTH_DIR_INFORMATION {
     WCHAR ShortName[12];
     WCHAR FileName[1];
 } FILE_BOTH_DIR_INFORMATION, *PFILE_BOTH_DIR_INFORMATION;
-
 
 typedef struct _FILE_ID_BOTH_DIR_INFORMATION {
     ULONG NextEntryOffset;
@@ -291,14 +275,12 @@ typedef struct _FILE_ID_BOTH_DIR_INFORMATION {
     WCHAR FileName[1];
 } FILE_ID_BOTH_DIR_INFORMATION, *PFILE_ID_BOTH_DIR_INFORMATION;
 
-
 typedef struct _FILE_NAMES_INFORMATION {
     ULONG NextEntryOffset;
     ULONG FileIndex;
     ULONG FileNameLength;
     WCHAR FileName[1];
 } FILE_NAMES_INFORMATION, *PFILE_NAMES_INFORMATION;
-
 
 #define ANSI_DOS_STAR   ('<')
 #define ANSI_DOS_QM     ('>')
@@ -308,26 +290,21 @@ typedef struct _FILE_NAMES_INFORMATION {
 #define DOS_QM          (L'>')
 #define DOS_DOT         (L'"')
 
-
 typedef struct _FILE_INTERNAL_INFORMATION {
     LARGE_INTEGER IndexNumber;
 } FILE_INTERNAL_INFORMATION, *PFILE_INTERNAL_INFORMATION;
-
 
 typedef struct _FILE_EA_INFORMATION {
     ULONG EaSize;
 } FILE_EA_INFORMATION, *PFILE_EA_INFORMATION;
 
-
 typedef struct _FILE_ACCESS_INFORMATION {
     ACCESS_MASK AccessFlags;
 } FILE_ACCESS_INFORMATION, *PFILE_ACCESS_INFORMATION;
 
-
 typedef struct _FILE_MODE_INFORMATION {
     ULONG Mode;
 } FILE_MODE_INFORMATION, *PFILE_MODE_INFORMATION;
-
 
 typedef struct _FILE_ALL_INFORMATION {
     FILE_BASIC_INFORMATION BasicInformation;
@@ -341,11 +318,9 @@ typedef struct _FILE_ALL_INFORMATION {
     FILE_NAME_INFORMATION NameInformation;
 } FILE_ALL_INFORMATION, *PFILE_ALL_INFORMATION;
 
-
 typedef struct _FILE_ALLOCATION_INFORMATION {
     LARGE_INTEGER AllocationSize;
 } FILE_ALLOCATION_INFORMATION, *PFILE_ALLOCATION_INFORMATION;
-
 
 typedef struct _FILE_COMPRESSION_INFORMATION {
     LARGE_INTEGER CompressedFileSize;
@@ -356,7 +331,6 @@ typedef struct _FILE_COMPRESSION_INFORMATION {
     UCHAR Reserved[3];
 } FILE_COMPRESSION_INFORMATION, *PFILE_COMPRESSION_INFORMATION;
 
-
 typedef struct _FILE_LINK_INFORMATION {
     BOOLEAN ReplaceIfExists;
     HANDLE RootDirectory;
@@ -364,14 +338,12 @@ typedef struct _FILE_LINK_INFORMATION {
     WCHAR FileName[1];
 } FILE_LINK_INFORMATION, *PFILE_LINK_INFORMATION;
 
-
 typedef struct _FILE_RENAME_INFORMATION {
     BOOLEAN ReplaceIfExists;
     HANDLE RootDirectory;
     ULONG FileNameLength;
     WCHAR FileName[1];
 } FILE_RENAME_INFORMATION, *PFILE_RENAME_INFORMATION;
-
 
 typedef struct _FILE_STREAM_INFORMATION {
     ULONG NextEntryOffset;
@@ -381,13 +353,10 @@ typedef struct _FILE_STREAM_INFORMATION {
     WCHAR StreamName[1];
 } FILE_STREAM_INFORMATION, *PFILE_STREAM_INFORMATION;
 
-
-
 typedef struct _FILE_FS_LABEL_INFORMATION {
     ULONG VolumeLabelLength;
     WCHAR VolumeLabel[1];
 } FILE_FS_LABEL_INFORMATION, *PFILE_FS_LABEL_INFORMATION;
-
 
 typedef struct _FILE_FS_VOLUME_INFORMATION {
     LARGE_INTEGER VolumeCreationTime;
@@ -397,14 +366,12 @@ typedef struct _FILE_FS_VOLUME_INFORMATION {
     WCHAR VolumeLabel[1];
 } FILE_FS_VOLUME_INFORMATION, *PFILE_FS_VOLUME_INFORMATION;
 
-
 typedef struct _FILE_FS_SIZE_INFORMATION {
     LARGE_INTEGER TotalAllocationUnits;
     LARGE_INTEGER AvailableAllocationUnits;
     ULONG SectorsPerAllocationUnit;
     ULONG BytesPerSector;
 } FILE_FS_SIZE_INFORMATION, *PFILE_FS_SIZE_INFORMATION;
-
 
 typedef struct _FILE_FS_FULL_SIZE_INFORMATION {
     LARGE_INTEGER TotalAllocationUnits;
@@ -414,12 +381,10 @@ typedef struct _FILE_FS_FULL_SIZE_INFORMATION {
     ULONG BytesPerSector;
 } FILE_FS_FULL_SIZE_INFORMATION, *PFILE_FS_FULL_SIZE_INFORMATION;
 
-
 typedef struct _FILE_FS_OBJECTID_INFORMATION {
     UCHAR ObjectId[16];
     UCHAR ExtendedInfo[48];
 } FILE_FS_OBJECTID_INFORMATION, *PFILE_FS_OBJECTID_INFORMATION;
-
 
 typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
     ULONG FileSystemAttributes;
@@ -427,7 +392,6 @@ typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
     ULONG FileSystemNameLength;
     WCHAR FileSystemName[1];
 } FILE_FS_ATTRIBUTE_INFORMATION, *PFILE_FS_ATTRIBUTE_INFORMATION;
-
 
 typedef struct _FILE_NETWORK_OPEN_INFORMATION {
     LARGE_INTEGER CreationTime;
@@ -439,7 +403,6 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION {
     ULONG FileAttributes;
 } FILE_NETWORK_OPEN_INFORMATION, *PFILE_NETWORK_OPEN_INFORMATION;
 
-
 #define SL_RESTART_SCAN                 0x01
 #define SL_RETURN_SINGLE_ENTRY          0x02
 #define SL_INDEX_SPECIFIED              0x04
@@ -449,8 +412,7 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION {
 #define SL_OPEN_TARGET_DIRECTORY        0x04
 #define SL_CASE_SENSITIVE               0x80
 
-#define ALIGN_DOWN(length, type) \
-    ((ULONG)(length) & ~(sizeof(type) - 1))
+#define ALIGN_DOWN(length, type) ((ULONG)(length) & ~(sizeof(type) - 1))
 
 #define ALIGN_UP(length, type) \
     (ALIGN_DOWN(((ULONG)(length) + sizeof(type) - 1), type))
@@ -461,36 +423,21 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION {
 #define ALIGN_UP_POINTER(address, type) \
     (ALIGN_DOWN_POINTER(((ULONG_PTR)(address) + sizeof(type) - 1), type))
 
+#define WordAlign(Val) (ALIGN_UP(Val, WORD))
 
-#define WordAlign(Val) (                    \
-    ALIGN_UP( Val, WORD )                   \
-    )
+#define WordAlignPtr(Ptr) (ALIGN_UP_POINTER(Ptr, WORD))
 
-#define WordAlignPtr(Ptr) (                 \
-    ALIGN_UP_POINTER( Ptr, WORD )           \
-    )
+#define LongAlign(Val) (ALIGN_UP(Val, LONG))
 
-#define LongAlign(Val) (                    \
-    ALIGN_UP( Val, LONG )                   \
-    )
+#define LongAlignPtr(Ptr) (ALIGN_UP_POINTER(Ptr, LONG))
 
-#define LongAlignPtr(Ptr) (                 \
-    ALIGN_UP_POINTER( Ptr, LONG )           \
-    )
+#define QuadAlign(Val) (ALIGN_UP(Val, ULONGLONG))
 
-#define QuadAlign(Val) (                    \
-    ALIGN_UP( Val, ULONGLONG )              \
-    )
+#define QuadAlignPtr(Ptr) (ALIGN_UP_POINTER(Ptr, ULONGLONG))
 
-#define QuadAlignPtr(Ptr) (                 \
-    ALIGN_UP_POINTER( Ptr, ULONGLONG )      \
-    )
+#define IsPtrQuadAligned(Ptr) (QuadAlignPtr(Ptr) == (PVOID)(Ptr))
 
-#define IsPtrQuadAligned(Ptr) (           \
-    QuadAlignPtr(Ptr) == (PVOID)(Ptr)     \
-    )
-
-
+// from wdm.h
 #define FILE_SUPERSEDE                  0x00000000
 #define FILE_OPEN                       0x00000001
 #define FILE_CREATE                     0x00000002
@@ -503,12 +450,34 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION {
 #define FILE_WRITE_THROUGH                      0x00000002
 #define FILE_SEQUENTIAL_ONLY                    0x00000004
 #define FILE_NO_INTERMEDIATE_BUFFERING          0x00000008
-#define FILE_DELETE_ON_CLOSE                    0x00001000
 
 #define FILE_SYNCHRONOUS_IO_ALERT               0x00000010
 #define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
 #define FILE_NON_DIRECTORY_FILE                 0x00000040
 #define FILE_CREATE_TREE_CONNECTION             0x00000080
+
+#define FILE_COMPLETE_IF_OPLOCKED 0x00000100
+#define FILE_NO_EA_KNOWLEDGE 0x00000200
+#define FILE_OPEN_REMOTE_INSTANCE 0x00000400
+#define FILE_RANDOM_ACCESS 0x00000800
+
+#define FILE_DELETE_ON_CLOSE 0x00001000
+#define FILE_OPEN_BY_FILE_ID 0x00002000
+#define FILE_OPEN_FOR_BACKUP_INTENT 0x00004000
+#define FILE_NO_COMPRESSION 0x00008000
+
+#if (_WIN32_WINNT >= _WIN32_WINNT_WIN7)
+#define FILE_OPEN_REQUIRING_OPLOCK 0x00010000
+#define FILE_DISALLOW_EXCLUSIVE 0x00020000
+#endif /* _WIN32_WINNT >= _WIN32_WINNT_WIN7 */
+#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+#define FILE_SESSION_AWARE 0x00040000
+#endif /* _WIN32_WINNT >= _WIN32_WINNT_WIN7 */
+
+#define FILE_RESERVE_OPFILTER 0x00100000
+#define FILE_OPEN_REPARSE_POINT 0x00200000
+#define FILE_OPEN_NO_RECALL 0x00400000
+#define FILE_OPEN_FOR_FREE_SPACE_QUERY 0x00800000
 
 #define FILE_VALID_OPTION_FLAGS                 0x00ffffff
 
@@ -522,5 +491,11 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION {
 #define FILE_WRITE_TO_END_OF_FILE       0xffffffff
 #define FILE_USE_FILE_POINTER_POSITION  0xfffffffe
 
+// https://msdn.microsoft.com/en-us/library/windows/hardware/ff564879(v=vs.85).aspx
+typedef struct _UNICODE_STRING {
+  USHORT Length;
+  USHORT MaximumLength;
+  PWSTR Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
 
 #endif // _FILEINFO_H_

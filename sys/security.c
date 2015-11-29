@@ -21,11 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 #include "dokan.h"
 
 NTSTATUS
-DokanDispatchQuerySecurity(
-	__in PDEVICE_OBJECT DeviceObject,
-	__in PIRP Irp
-	)
-{
+DokanDispatchQuerySecurity(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 	PIO_STACK_LOCATION	irpSp;
 	NTSTATUS			status = STATUS_NOT_IMPLEMENTED;
 	PFILE_OBJECT		fileObject;
@@ -104,7 +100,8 @@ DokanDispatchQuerySecurity(
 		}
 
 		if (Irp->UserBuffer != NULL && bufferLength > 0) {
-			// make a MDL for UserBuffer that can be used later on another thread context	
+      // make a MDL for UserBuffer that can be used later on another thread
+      // context
 			if (Irp->MdlAddress == NULL) {
 				status = DokanAllocateMdl(Irp, bufferLength);
 				if (!NT_SUCCESS(status)) {
@@ -118,7 +115,7 @@ DokanDispatchQuerySecurity(
 		eventContext->Context = ccb->UserContext;
 		eventContext->Operation.Security.SecurityInformation = *securityInfo;
 		eventContext->Operation.Security.BufferLength = bufferLength;
-	
+
 		eventContext->Operation.Security.FileNameLength = fcb->FileName.Length;
 		RtlCopyMemory(eventContext->Operation.Security.FileName,
 				fcb->FileName.Buffer, fcb->FileName.Length);
@@ -135,13 +132,8 @@ DokanDispatchQuerySecurity(
 	return status;
 }
 
-
-VOID
-DokanCompleteQuerySecurity(
-	__in PIRP_ENTRY		IrpEntry,
-	__in PEVENT_INFORMATION EventInfo
-	)
-{
+VOID DokanCompleteQuerySecurity(__in PIRP_ENTRY IrpEntry,
+                                __in PEVENT_INFORMATION EventInfo) {
 	PIRP		irp;
 	PIO_STACK_LOCATION	irpSp;
 	NTSTATUS	status;
@@ -154,7 +146,7 @@ DokanCompleteQuerySecurity(
 	DDbgPrint("==> DokanCompleteQuerySecurity\n");
 
 	irp   = IrpEntry->Irp;
-	irpSp = IrpEntry->IrpSp;	
+  irpSp = IrpEntry->IrpSp;
 
 	if (irp->MdlAddress) {
 		buffer = MmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
@@ -163,14 +155,14 @@ DokanCompleteQuerySecurity(
 	bufferLength = irpSp->Parameters.QuerySecurity.Length;
 
 	if (EventInfo->Status == STATUS_SUCCESS &&
-		EventInfo->BufferLength <= bufferLength &&
-		buffer != NULL) {
+      EventInfo->BufferLength <= bufferLength && buffer != NULL) {
 		RtlCopyMemory(buffer, EventInfo->Buffer, EventInfo->BufferLength);
 		info = EventInfo->BufferLength;
 		status = STATUS_SUCCESS;
 
 	} else if (EventInfo->Status == STATUS_BUFFER_OVERFLOW ||
-			(EventInfo->Status == STATUS_SUCCESS && bufferLength < EventInfo->BufferLength)) {
+             (EventInfo->Status == STATUS_SUCCESS &&
+              bufferLength < EventInfo->BufferLength)) {
 		info = EventInfo->BufferLength;
 		status = STATUS_BUFFER_OVERFLOW;
 
@@ -199,13 +191,8 @@ DokanCompleteQuerySecurity(
 	DDbgPrint("<== DokanCompleteQuerySecurity\n");
 }
 
-
 NTSTATUS
-DokanDispatchSetSecurity(
-	__in PDEVICE_OBJECT DeviceObject,
-	__in PIRP Irp
-	)
-{
+DokanDispatchSetSecurity(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 	PIO_STACK_LOCATION	irpSp;
 	PDokanVCB			vcb;
 	PDokanDCB			dcb;
@@ -278,7 +265,8 @@ DokanDispatchSetSecurity(
 		// Assumes the parameter is self relative SD.
 		securityDescLength = RtlLengthSecurityDescriptor(securityDescriptor);
 
-		eventLength = sizeof(EVENT_CONTEXT) + securityDescLength + fcb->FileName.Length;
+    eventLength =
+        sizeof(EVENT_CONTEXT) + securityDescLength + fcb->FileName.Length;
 
 		if (EVENT_CONTEXT_MAX_SIZE < eventLength) {
 			// TODO: Handle this case like DispatchWrite.
@@ -297,14 +285,16 @@ DokanDispatchSetSecurity(
 		eventContext->Context = ccb->UserContext;
 		eventContext->Operation.SetSecurity.SecurityInformation = *securityInfo;
 		eventContext->Operation.SetSecurity.BufferLength = securityDescLength;
-		eventContext->Operation.SetSecurity.BufferOffset = FIELD_OFFSET(EVENT_CONTEXT, Operation.SetSecurity.FileName[0]) +
+    eventContext->Operation.SetSecurity.BufferOffset =
+        FIELD_OFFSET(EVENT_CONTEXT, Operation.SetSecurity.FileName[0]) +
 			fcb->FileName.Length + sizeof(WCHAR);
-		RtlCopyMemory((PCHAR)eventContext + eventContext->Operation.SetSecurity.BufferOffset,
+    RtlCopyMemory((PCHAR)eventContext +
+                      eventContext->Operation.SetSecurity.BufferOffset,
 			securityDescriptor, securityDescLength);
 
-
 		eventContext->Operation.SetSecurity.FileNameLength = fcb->FileName.Length;
-		RtlCopyMemory(eventContext->Operation.SetSecurity.FileName, fcb->FileName.Buffer, fcb->FileName.Length);
+    RtlCopyMemory(eventContext->Operation.SetSecurity.FileName,
+                  fcb->FileName.Buffer, fcb->FileName.Length);
 
 		status = DokanRegisterPendingIrp(DeviceObject, Irp, eventContext, 0);
 
@@ -318,13 +308,8 @@ DokanDispatchSetSecurity(
 	return status;
 }
 
-
-VOID
-DokanCompleteSetSecurity(
-	__in PIRP_ENTRY		IrpEntry,
-	__in PEVENT_INFORMATION EventInfo
-	)
-{
+VOID DokanCompleteSetSecurity(__in PIRP_ENTRY IrpEntry,
+                              __in PEVENT_INFORMATION EventInfo) {
 	PIRP				irp;
 	PIO_STACK_LOCATION	irpSp;
 	PFILE_OBJECT		fileObject;
@@ -333,7 +318,7 @@ DokanCompleteSetSecurity(
 	DDbgPrint("==> DokanCompleteSetSecurity\n");
 
 	irp   = IrpEntry->Irp;
-	irpSp = IrpEntry->IrpSp;	
+  irpSp = IrpEntry->IrpSp;
 
 	fileObject = IrpEntry->FileObject;
 	ASSERT(fileObject != NULL);

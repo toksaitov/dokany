@@ -18,16 +18,10 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "dokan.h"
 
-
-
 NTSTATUS
-DokanDispatchClose(
-	__in PDEVICE_OBJECT DeviceObject,
-	__in PIRP Irp
-	)
+DokanDispatchClose(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp)
 
 /*++
 
@@ -58,7 +52,7 @@ Return Value:
 	__try {
 
 		DDbgPrint("==> DokanClose\n");
-	
+
 		irpSp = IoGetCurrentIrpStackLocation(Irp);
 		fileObject = irpSp->FileObject;
 
@@ -108,7 +102,7 @@ Return Value:
 		eventContext = AllocateEventContext(vcb->Dcb, Irp, eventLength, ccb);
 
 		if (eventContext == NULL) {
-			//status = STATUS_INSUFFICIENT_RESOURCES;
+      // status = STATUS_INSUFFICIENT_RESOURCES;
 			DDbgPrint("   eventContext == NULL\n");
 			DDbgPrint("   Free CCB:%p\n", ccb);
 			DokanFreeCCB(ccb);
@@ -122,7 +116,8 @@ Return Value:
 
 		// copy the file name to be closed
 		eventContext->Operation.Close.FileNameLength = fcb->FileName.Length;
-		RtlCopyMemory(eventContext->Operation.Close.FileName, fcb->FileName.Buffer, fcb->FileName.Length);
+    RtlCopyMemory(eventContext->Operation.Close.FileName, fcb->FileName.Buffer,
+                  fcb->FileName.Length);
 
 		DDbgPrint("   Free CCB:%p\n", ccb);
 		DokanFreeCCB(ccb);
@@ -131,7 +126,8 @@ Return Value:
 
 		// Close can not be pending status
 		// don't register this IRP
-		//status = DokanRegisterPendingIrp(DeviceObject, Irp, eventContext->SerialNumber, 0);
+    // status = DokanRegisterPendingIrp(DeviceObject, Irp,
+    // eventContext->SerialNumber, 0);
 
 		// inform it to user-mode
 		DokanEventNotification(&vcb->Dcb->NotifyEvent, eventContext);
@@ -147,4 +143,3 @@ Return Value:
 
 	return status;
 }
-
