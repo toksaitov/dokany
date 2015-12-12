@@ -455,7 +455,7 @@ DokanEventStart(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
   ExAcquireResourceExclusiveLite(&dokanGlobal->Resource, TRUE);
 
   status = DokanCreateDiskDevice(
-      DeviceObject->DriverObject, dokanGlobal->MountId, baseGuidString,
+      DeviceObject->DriverObject, dokanGlobal->MountId, eventStart.MountPoint, baseGuidString,
       dokanGlobal, deviceType, deviceCharacteristics, &dcb);
 
   if (!NT_SUCCESS(status)) {

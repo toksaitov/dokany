@@ -115,7 +115,7 @@ DiskDeviceControl(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 
   if (!dcb->Mounted) {
         DDbgPrint("  Device is not mounted");
-    if (dcb->SymbolicLinkName != NULL) {
+    if (dcb->DiskDeviceName != NULL) {
             DDbgPrint("  Device is not mounted, so delete the device");
             DokanUnmount(dcb);
         }
@@ -385,11 +385,9 @@ DiskDeviceControl(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 				RtlCopyMemory((PCHAR)uniqueId->UniqueId,  
 								dcb->DiskDeviceName->Buffer,
 								uniqueId->UniqueIdLength);
-      Irp->IoStatus.Information =
-          FIELD_OFFSET(MOUNTDEV_UNIQUE_ID, UniqueId[0]) +
-											uniqueId->UniqueIdLength;
+				Irp->IoStatus.Information = FIELD_OFFSET(MOUNTDEV_UNIQUE_ID, UniqueId[0]) + uniqueId->UniqueIdLength;
 				status = STATUS_SUCCESS;
-                DDbgPrint("  UniqueName %u\n", (unsigned int)uniqueId->UniqueId);
+                DDbgPrint("  UniqueName %wZ\n", dcb->DiskDeviceName);
 				break;
 			} else {
 				Irp->IoStatus.Information = sizeof(MOUNTDEV_UNIQUE_ID);
@@ -397,7 +395,41 @@ DiskDeviceControl(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 			}
   } break;
 	case IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME:
+		PMOUNTDEV_SUGGESTED_LINK_NAME linkName;
 		DDbgPrint("   IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME\n");
+
+		if (outputLength < sizeof(MOUNTDEV_SUGGESTED_LINK_NAME)) {
+			status = STATUS_BUFFER_TOO_SMALL;
+			Irp->IoStatus.Information = sizeof(MOUNTDEV_SUGGESTED_LINK_NAME);
+			break;
+		}
+
+		linkName = (PMOUNTDEV_SUGGESTED_LINK_NAME)Irp->AssociatedIrp.SystemBuffer;
+		ASSERT(linkName != NULL);
+
+		if (dcb->MountPoint != NULL) {
+			linkName->UseOnlyIfThereAreNoOtherLinks = FALSE;
+			linkName->NameLength = dcb->MountPoint->Length;
+
+			if (sizeof(USHORT) + linkName->NameLength < outputLength) {
+				RtlCopyMemory((PCHAR)linkName->Name,
+					dcb->MountPoint->Buffer,
+					linkName->NameLength);
+				Irp->IoStatus.Information = FIELD_OFFSET(MOUNTDEV_SUGGESTED_LINK_NAME, Name[0]) + linkName->NameLength;
+				status = STATUS_SUCCESS;
+				DDbgPrint("  LinkName %wZ\n", dcb->MountPoint);
+				break;
+			}
+			else {
+				Irp->IoStatus.Information = sizeof(MOUNTDEV_SUGGESTED_LINK_NAME);
+				status = STATUS_BUFFER_OVERFLOW;
+			}
+		}
+		else {
+			DDbgPrint("   MountPoint is NULL\n");
+			status = STATUS_NOT_FOUND;
+		}
+
 		break;
   case IOCTL_MOUNTDEV_LINK_CREATED: {
 			PMOUNTDEV_NAME	mountdevName = Irp->AssociatedIrp.SystemBuffer;
@@ -405,17 +437,10 @@ DiskDeviceControl(__in PDEVICE_OBJECT DeviceObject, __in PIRP Irp) {
 
 			status = STATUS_SUCCESS;
 			if (mountdevName != NULL && mountdevName->NameLength > 0) {
-				// Link path should be \\??\Volume{x}
 				WCHAR	symbolicLinkNameBuf[MAXIMUM_FILENAME_LENGTH];
 				RtlZeroMemory(symbolicLinkNameBuf, sizeof(symbolicLinkNameBuf));
 				RtlCopyMemory(symbolicLinkNameBuf, mountdevName->Name, mountdevName->NameLength);
-				DDbgPrint("   SymbolicLinkName: %ws\n", symbolicLinkNameBuf)
-
-				dcb->SymbolicLinkName = DokanAllocateUnicodeString(symbolicLinkNameBuf);
-				if (dcb->SymbolicLinkName == NULL) {
-					DDbgPrint("  Can't allocate memory for SymbolicLinkName");
-					status = STATUS_INSUFFICIENT_RESOURCES;
-				}
+				DDbgPrint("   MountDev Name: %ws\n", symbolicLinkNameBuf)
 			}
 		}
 		break;

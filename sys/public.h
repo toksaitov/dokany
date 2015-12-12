@@ -341,7 +341,7 @@ typedef struct _EVENT_START {
 	ULONG	UserVersion;
 	ULONG	DeviceType;
 	ULONG	Flags;
-	WCHAR	DriveLetter;
+	WCHAR	MountPoint[260];
     ULONG   IrpTimeout;
 } EVENT_START, *PEVENT_START;
 

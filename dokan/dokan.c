@@ -200,13 +200,7 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
     return DOKAN_START_ERROR;
   }
 
-  if (!DokanMount(instance->MountPoint, instance->DeviceName)) {
-    SendReleaseIRP(instance->DeviceName);
-    DokanDbgPrint("Dokan Error: DefineDosDevice Failed\n");
-    CloseHandle(device);
-    return DOKAN_MOUNT_ERROR;
-  }
-
+  // Here we should have been mounter by mountmanager thanks to IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME
   DbgPrintW(L"mounted: %s -> %s\n", instance->MountPoint, instance->DeviceName);
 
   // Start Keep Alive thread
@@ -591,6 +585,8 @@ BOOL DokanStart(PDOKAN_INSTANCE Instance) {
   if (Instance->DokanOptions->Options & DOKAN_OPTION_WRITE_PROTECT) {
     eventStart.Flags |= DOKAN_EVENT_WRITE_PROTECT;
   }
+
+  memcpy_s(eventStart.MountPoint, sizeof(eventStart.MountPoint), Instance->MountPoint, sizeof(Instance->MountPoint));
 
   eventStart.IrpTimeout = Instance->DokanOptions->Timeout;
 

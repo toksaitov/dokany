@@ -47,7 +47,7 @@ extern ULONG g_Debug;
 #define DOKAN_GLOBAL_FS_NETWORK_DEVICE_NAME L"\\Device\\DokanRedirector"
 
 #define DOKAN_DISK_DEVICE_NAME		L"\\Device\\Volume"
-#define DOKAN_SYMBOLIC_LINK_BASE    L"\\DosDevices\\Global"
+#define DOKAN_SYMBOLIC_LINK_NAME    L"\\DosDevices\\Global\\Volume"
 
 #define DOKAN_NET_DEVICE_NAME			L"\\Device\\NetworkVolume"
 #define DOKAN_NET_SYMBOLIC_LINK_NAME    L"\\DosDevices\\Global\\NetworkVolume"
@@ -180,6 +180,7 @@ typedef struct _DokanDiskControlBlock {
 
 	PUNICODE_STRING			DiskDeviceName;
 	PUNICODE_STRING			SymbolicLinkName;
+	PUNICODE_STRING			MountPoint;
 
 	DEVICE_TYPE				DeviceType;
 	ULONG					DeviceCharacteristics;
@@ -484,8 +485,8 @@ DokanCreateGlobalDiskDevice(__in PDRIVER_OBJECT DriverObject,
 
 NTSTATUS
 DokanCreateDiskDevice(__in PDRIVER_OBJECT DriverObject, __in ULONG MountId,
-                      __in PWCHAR BaseGuid, __in PDOKAN_GLOBAL DokanGlobal,
-	__in DEVICE_TYPE	DeviceType,
+	                  __in PWCHAR MountPoint, __in PWCHAR BaseGuid,
+	                  __in PDOKAN_GLOBAL DokanGlobal, __in DEVICE_TYPE	DeviceType,
                       __in ULONG DeviceCharacteristics, __out PDokanDCB *Dcb);
 
 VOID

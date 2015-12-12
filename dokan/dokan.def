@@ -4,7 +4,6 @@ LIBRARY	dokan
 EXPORTS
 
 DokanMain
-DokanMount
 DokanUnmount
 DokanIsNameInExpression
 DokanServiceInstall
