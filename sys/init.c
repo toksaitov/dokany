@@ -28,7 +28,7 @@ static UNICODE_STRING sddl = RTL_CONSTANT_STRING(
     L"D:P(A;;GA;;;SY)(A;;GRGWGX;;;BA)(A;;GRGWGX;;;WD)(A;;GRGX;;;RC)");
 
 NTSTATUS
-DokanSendIoContlToMountManager(__in PVOID InputBuffer, __in ULONG Length) {
+DokanSendIoContlToMountManager(__in ULONG IoControlCode, __in PVOID InputBuffer, __in ULONG Length) {
 	NTSTATUS		status;
 	UNICODE_STRING	mountManagerName;
 	PFILE_OBJECT    mountFileObject;
@@ -41,7 +41,7 @@ DokanSendIoContlToMountManager(__in PVOID InputBuffer, __in ULONG Length) {
 
 	RtlInitUnicodeString(&mountManagerName, MOUNTMGR_DEVICE_NAME);
 
-  status = IoGetDeviceObjectPointer(&mountManagerName, FILE_READ_ATTRIBUTES,
+    status = IoGetDeviceObjectPointer(&mountManagerName, FILE_READ_ATTRIBUTES,
                                     &mountFileObject, &mountDeviceObject);
 
 	if (!NT_SUCCESS(status)) {
@@ -52,7 +52,7 @@ DokanSendIoContlToMountManager(__in PVOID InputBuffer, __in ULONG Length) {
 	KeInitializeEvent(&driverEvent, NotificationEvent, FALSE);
 
 	irp = IoBuildDeviceIoControlRequest(
-      IOCTL_MOUNTMGR_VOLUME_ARRIVAL_NOTIFICATION, mountDeviceObject,
+		IoControlCode, mountDeviceObject,
       InputBuffer, Length, NULL, 0, FALSE, &driverEvent, &iosb);
 
 	if (irp == NULL) {
@@ -68,7 +68,7 @@ DokanSendIoContlToMountManager(__in PVOID InputBuffer, __in ULONG Length) {
 	status = iosb.Status;
 
 	ObDereferenceObject(mountFileObject);
-	ObDereferenceObject(mountDeviceObject);
+	// Don't dereference mountDeviceObject, mountFileObject is enough
 
 	if (NT_SUCCESS(status)) {
 		DDbgPrint("  IoCallDriver success\n");
@@ -102,7 +102,7 @@ DokanSendVolumeArrivalNotification(PUNICODE_STRING DeviceName) {
 	targetName->DeviceNameLength = DeviceName->Length;
 	RtlCopyMemory(targetName->DeviceName, DeviceName->Buffer, DeviceName->Length);
 
-	status = DokanSendIoContlToMountManager(targetName, length);
+	status = DokanSendIoContlToMountManager(IOCTL_MOUNTMGR_VOLUME_ARRIVAL_NOTIFICATION, targetName, length);
 
 	if (NT_SUCCESS(status)) {
 		DDbgPrint("  IoCallDriver success\n");
@@ -113,6 +113,43 @@ DokanSendVolumeArrivalNotification(PUNICODE_STRING DeviceName) {
 	ExFreePool(targetName);	
 
 	DDbgPrint("<= DokanSendVolumeArrivalNotification\n");
+
+	return status;
+}
+
+NTSTATUS
+DokanSendVolumeRemovalNotification(PUNICODE_STRING DeviceName) {
+	NTSTATUS		status;
+	PMOUNTMGR_TARGET_NAME targetName;
+	ULONG			length;
+
+	DDbgPrint("=> DokanSendVolumeRemovalNotification\n");
+
+	length = sizeof(MOUNTMGR_TARGET_NAME) + DeviceName->Length - 1;
+	targetName = ExAllocatePool(length);
+
+	if (targetName == NULL) {
+		DDbgPrint("  can't allocate MOUNTMGR_TARGET_NAME\n");
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	RtlZeroMemory(targetName, length);
+
+	targetName->DeviceNameLength = DeviceName->Length;
+	RtlCopyMemory(targetName->DeviceName, DeviceName->Buffer, DeviceName->Length);
+
+	status = DokanSendIoContlToMountManager(IOCTL_MOUNTMGR_DELETE_POINTS, targetName, length);
+
+	if (NT_SUCCESS(status)) {
+		DDbgPrint("  IoCallDriver success\n");
+	}
+	else {
+		DDbgPrint("  IoCallDriver failed: 0x%x\n", status);
+	}
+
+	ExFreePool(targetName);
+
+	DDbgPrint("<= DokanSendVolumeRemovalNotification\n");
 
 	return status;
 }
@@ -669,6 +706,8 @@ VOID DokanDeleteDeviceObject(__in PDokanDCB Dcb) {
 
     DDbgPrint("  Delete Symbolic Name: %wZ\n", Dcb->SymbolicLinkName);
     IoDeleteSymbolicLink(Dcb->SymbolicLinkName);
+
+	DokanSendVolumeRemovalNotification(Dcb->DiskDeviceName);
 
 	if (Dcb->MountedDeviceInterfaceName.Buffer != NULL) {
 		IoSetDeviceInterfaceState(&Dcb->MountedDeviceInterfaceName, FALSE);
